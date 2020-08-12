@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+
+  web:
+    container_name: test-task-web
+    image: nginx:1.15.10-alpine
+    restart: always
+    ports:
+        - "88:80"
+    volumes:
+      - ../../app/:/app
+      - ../logs:/logs
+      - ../common/host.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - default
+    depends_on:
+      - app
+
+  db:
+    image: mysql:5.7
+    volumes:
+      - ../../db_data:/var/lib/mysql
+    restart: always
+    env_file: variables_mysql.env
+    ports:
+      - "3336:3306"
+    networks:
+      - default
+
+  app:
+    container_name: test-task-app
+    build:
+      context: ..
+      dockerfile: config/Dockerfile-php
+    restart: always
+    networks:
+      - default
+    environment:
+      XDEBUG_CONFIG: remote_host=192.168.1.64
+      PHP_IDE_CONFIG: serverName=Docker
+    volumes:
+      - ../../app/:/app
+      - ../common/php.ini:/usr/local/etc/php/php.ini
+
+# Создаем общую сеть deafult для всех контейнеров
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  db_data: {}
